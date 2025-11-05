@@ -1,3 +1,5 @@
+use tauri_plugin_sql::Builder;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -8,6 +10,11 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            // 只初始化数据库连接，不创建表
+            // 表的创建由前端控制
+            Builder::default().build(),
+        )
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
