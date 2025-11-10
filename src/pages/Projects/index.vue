@@ -1,35 +1,27 @@
 <template>
   <div class="project-page">
-    <div class="project-layout">
-      <!-- 主内容区 -->
-      <div class="main-content">
-        <!-- 页面标题和操作栏 -->
-        <div class="page-header">
-          <h1 class="page-title">项目管理</h1>
-          <div class="header-actions">
-            <n-button type="primary" class="create-btn" @click="showCreateModal = true">
-              <template #icon>
-                <span>💡</span>
-              </template>
-              创建新项目
-            </n-button>
-          </div>
-        </div>
+    <div class="page-header">
+      <h1 class="page-title">项目管理</h1>
+      <n-button type="primary" class="create-btn" @click="showCreateModal = true">
+        <template #icon>
+          <span>💡</span>
+        </template>
+        创建新项目
+      </n-button>
+    </div>
 
-        <!-- 错误提示 -->
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
 
-        <!-- 项目列表 -->
-        <div v-if="loading" class="loading-state">
-          <n-spin size="large" />
-        </div>
-        <div v-else-if="projects.length === 0" class="empty-state">
-          <div class="empty-icon">📁</div>
-          <div class="empty-text">暂无项目，请创建一个新项目</div>
-        </div>
-        <div v-else class="project-grid">
+    <div v-if="loading" class="loading-state">
+      <n-spin size="large" />
+    </div>
+    <div v-else-if="projects.length === 0" class="empty-state">
+      <div class="empty-icon">📁</div>
+      <div class="empty-text">暂无项目，请创建一个新项目</div>
+    </div>
+    <div v-else class="project-grid">
           <div
             v-for="project in projects"
             :key="project.projectId"
@@ -68,8 +60,6 @@
               </n-button>
             </div>
           </div>
-        </div>
-      </div>
     </div>
 
     <!-- 创建项目对话框 -->
@@ -107,6 +97,21 @@
         </div>
       </div>
     </n-modal>
+
+    <!-- 删除项目对话框 -->
+    <n-modal v-model:show="showDeleteModal" preset="dialog" title="删除项目">
+      <div class="create-form" v-if="deletingProject">
+        <div class="delete-message">
+          确定要删除项目 <strong>{{ deletingProject.projectName }}</strong> 吗？此操作不可恢复。
+        </div>
+        <div class="form-actions">
+          <n-button type="error" @click="confirmDelete">
+            删除
+          </n-button>
+          <n-button @click="cancelDelete">取消</n-button>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -121,8 +126,10 @@ const router = useRouter();
 
 const projectName = ref(getCurrentDateString());
 const editingProject = ref<Project | null>(null);
+const deletingProject = ref<Project | null>(null);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 
 // 使用 store 中的状态
 const projects = computed(() => projectStore.allProjects);
@@ -180,16 +187,32 @@ function cancelEdit() {
 }
 
 // 删除项目
-async function deleteProject(projectId: number) {
-  if (!confirm('确定要删除这个项目吗？')) {
+function deleteProject(projectId: number) {
+  const project = projects.value.find(p => p.projectId === projectId);
+  if (project) {
+    deletingProject.value = project;
+    showDeleteModal.value = true;
+  }
+}
+
+// 确认删除
+async function confirmDelete() {
+  if (!deletingProject.value) {
     return;
   }
   
   try {
-    await projectStore.deleteProject(projectId);
+    await projectStore.deleteProject(deletingProject.value.projectId);
+    cancelDelete();
   } catch (error) {
     console.error('删除项目失败:', error);
   }
+}
+
+// 取消删除
+function cancelDelete() {
+  deletingProject.value = null;
+  showDeleteModal.value = false;
 }
 
 // 查看项目详情
@@ -205,28 +228,18 @@ onMounted(() => {
 
 <style scoped>
 .project-page {
-  padding: 0;
+  padding: 16px;
   height: 100%;
   background: #1a1a1a;
   color: #fff;
-}
-
-.project-layout {
-  display: flex;
-  height: 100%;
-}
-
-.main-content {
-  flex: 1;
   overflow-y: auto;
-  padding: 24px;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .page-title {
@@ -247,19 +260,19 @@ onMounted(() => {
 }
 
 .error-message {
-  padding: 16px;
+  padding: 12px;
   background: rgba(255, 77, 79, 0.1);
   border: 1px solid #ff4d4f;
-  border-radius: 8px;
+  border-radius: 6px;
   color: #ff4d4f;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .loading-state {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 60px 0;
+  padding: 40px 0;
 }
 
 .empty-state {
@@ -267,29 +280,29 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 0;
+  padding: 60px 0;
   color: #888;
 }
 
 .empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+  font-size: 48px;
+  margin-bottom: 12px;
 }
 
 .empty-text {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
 }
 
 .project-card {
   background: #1e1e1e;
   border: 1px solid #2d2d2d;
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
@@ -298,8 +311,8 @@ onMounted(() => {
 }
 
 .project-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   border-color: #00bcd4;
 }
 
@@ -307,16 +320,16 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 8px;
   border-bottom: 1px solid #2d2d2d;
 }
 
 .project-label {
   background: #00bcd4;
   color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -326,7 +339,7 @@ onMounted(() => {
 }
 
 .action-btn {
-  padding: 4px 8px;
+  padding: 2px 6px;
   min-width: auto;
 }
 
@@ -336,7 +349,7 @@ onMounted(() => {
 
 .card-content {
   flex: 1;
-  padding: 24px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -344,25 +357,25 @@ onMounted(() => {
 }
 
 .project-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 36px;
+  margin-bottom: 8px;
 }
 
 .project-name {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   word-break: break-word;
 }
 
 .project-id {
-  font-size: 14px;
+  font-size: 12px;
   color: #888;
 }
 
 .card-footer {
-  padding: 12px;
+  padding: 8px;
   border-top: 1px solid #2d2d2d;
 }
 
@@ -378,13 +391,23 @@ onMounted(() => {
 }
 
 .create-form {
-  padding: 20px 0;
+  padding: 16px 0;
+}
+
+.delete-message {
+  padding: 12px 0;
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.delete-message strong {
+  color: #fff;
 }
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 </style>

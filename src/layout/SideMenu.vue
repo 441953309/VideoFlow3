@@ -37,20 +37,6 @@
           class="menu"
         />
       </div>
-
-      <!-- 我的 -->
-      <div class="menu-section">
-        <div v-if="!collapsed" class="section-title">我的</div>
-        <n-menu
-          :value="activeKey"
-          :options="myMenuOptions"
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="22"
-          @update:value="handleMenuClick"
-          class="menu"
-        />
-      </div>
     </div>
 
     <!-- 收起按钮 -->
@@ -87,13 +73,8 @@ function renderIcon(icon) {
 const creationMenuOptions = computed(() => [
   {
     label: '创作空间',
-    key: '/home',
-    icon: renderIcon('📁'),
-  },
-  {
-    label: '当前作品',
     key: '/projects',
-    icon: renderIcon('✏️'),
+    icon: renderIcon('📁'),
   },
   {
     label: '素材库',
@@ -122,24 +103,6 @@ const toolsMenuOptions = computed(() => [
     label: '常用页面',
     key: '/common-pages',
     icon: renderIcon('✈️'),
-  },
-]);
-
-const myMenuOptions = computed(() => [
-  {
-    label: '会员权益',
-    key: '/membership',
-    icon: renderIcon('💎'),
-  },
-  {
-    label: '共享云空间',
-    key: '/cloud',
-    icon: renderIcon('☁️'),
-  },
-  {
-    label: '专属客服',
-    key: '/customer-service',
-    icon: renderIcon('💬'),
   },
 ]);
 

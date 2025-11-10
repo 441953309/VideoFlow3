@@ -2,46 +2,40 @@
   <div class="project-detail-page">
     <!-- 顶部导航栏 -->
     <div class="top-header">
-      <div class="header-left">
-        <n-button type="tertiary" @click="goBack" class="back-btn">
-          <template #icon>
-            <span>←</span>
-          </template>
-          返回
-        </n-button>
-      </div>
-      <div class="header-center">
-        <n-input
-          v-model:value="searchText"
-          placeholder="在使用文档中搜索..."
-          class="search-input"
-          clearable
+      <n-button type="tertiary" @click="goBack" class="back-btn">
+        <template #icon>
+          <span>←</span>
+        </template>
+        返回
+      </n-button>
+      <n-input
+        v-model:value="searchText"
+        placeholder="在使用文档中搜索..."
+        class="search-input"
+        clearable
+      >
+        <template #prefix>
+          <span>🔍</span>
+        </template>
+      </n-input>
+      <div class="date-filters">
+        <n-button
+          v-for="date in dateFilters"
+          :key="date"
+          size="small"
+          type="tertiary"
+          :class="['date-filter-btn', { active: selectedDate === date }]"
+          @click="selectedDate = date"
         >
-          <template #prefix>
-            <span>🔍</span>
-          </template>
-        </n-input>
-        <div class="date-filters">
-          <n-button
-            v-for="date in dateFilters"
-            :key="date"
-            size="small"
-            type="tertiary"
-            :class="['date-filter-btn', { active: selectedDate === date }]"
-            @click="selectedDate = date"
-          >
-            {{ date }}
-          </n-button>
-        </div>
-      </div>
-      <div class="header-right">
-        <n-button type="tertiary" class="vip-btn">
-          <template #icon>
-            <span>👑</span>
-          </template>
-          VIP会员
+          {{ date }}
         </n-button>
       </div>
+      <n-button type="tertiary" class="vip-btn">
+        <template #icon>
+          <span>👑</span>
+        </template>
+        VIP会员
+      </n-button>
     </div>
 
     <!-- 主内容区 -->
@@ -81,30 +75,17 @@
             :class="['storyboard-card', { active: selectedStoryboardId === storyboard.storyboardId }]"
             @click="selectStoryboard(storyboard.storyboardId)"
           >
-            <!-- 分镜头部 -->
             <div class="card-header">
               <div class="card-number">#{{ storyboard.sequenceNumber }}</div>
               <div class="card-actions" @click.stop>
-                <n-button
-                  type="tertiary"
-                  size="tiny"
-                  class="action-btn"
-                  @click="editStoryboard(storyboard)"
-                >
+                <n-button type="tertiary" size="tiny" class="action-btn" @click="editStoryboard(storyboard)">
                   ✏️
                 </n-button>
-                <n-button
-                  type="tertiary"
-                  size="tiny"
-                  class="action-btn"
-                  @click="deleteStoryboard(storyboard.storyboardId)"
-                >
+                <n-button type="tertiary" size="tiny" class="action-btn" @click="deleteStoryboard(storyboard.storyboardId)">
                   🗑️
                 </n-button>
               </div>
             </div>
-
-            <!-- 分镜内容 -->
             <div class="card-content">
               <n-button type="primary" size="small" class="generate-btn">
                 <template #icon>
@@ -149,8 +130,6 @@
                 <span>男-深空紫发-海贼大衣</span>
               </div>
             </div>
-
-            <!-- 底部操作栏 -->
             <div class="card-footer" @click.stop>
               <n-button type="tertiary" size="small" class="footer-btn" @click="editStoryboard(storyboard)">
                 <template #icon>
@@ -185,15 +164,6 @@
             </div>
           </div>
 
-          <!-- 添加分镜按钮 -->
-          <div class="add-storyboard-buttons">
-            <n-button type="primary" size="small" @click="openAddStoryboardModal">
-              + 新建分镜
-            </n-button>
-            <n-button type="error" size="small" @click="deleteSelectedStoryboard">
-              X 删除分镜
-            </n-button>
-          </div>
         </div>
       </div>
 
@@ -204,7 +174,6 @@
           <div class="empty-text">请选择一个分镜查看详情</div>
         </div>
         <div v-else class="storyboard-detail">
-          <!-- 操作按钮 -->
           <div class="detail-actions">
             <n-button type="tertiary" size="small" class="action-btn">
               <template #icon>
@@ -219,58 +188,39 @@
               角色匹配
             </n-button>
           </div>
-
-          <!-- 文本区域 -->
-          <div class="text-area-container">
-            <n-input
-              v-model:value="selectedDialogueText"
-              type="textarea"
-              :rows="8"
-              placeholder="输入对话内容..."
-              class="dialogue-textarea"
-            />
-          </div>
-
-          <!-- 底部控制 -->
+          <n-input
+            v-model:value="selectedDialogueText"
+            type="textarea"
+            :rows="8"
+            placeholder="输入对话内容..."
+            class="dialogue-textarea"
+          />
           <div class="detail-controls">
-            <div class="control-left">
-              <n-select
-                v-model:value="selectedVoice"
-                :options="voiceOptions"
-                placeholder="默认"
-                size="small"
-                class="voice-select"
-              />
-              <n-button type="tertiary" size="small" class="listen-btn">
-                <template #icon>
-                  <span>🔊</span>
-                </template>
-                试听
-              </n-button>
-            </div>
-            <div class="control-right">
-              <n-button type="tertiary" size="small" class="adjust-btn">
-                <template #icon>
-                  <span>↑</span>
-                </template>
-              </n-button>
-              <n-button type="tertiary" size="small" class="adjust-btn">
-                <template #icon>
-                  <span>↓</span>
-                </template>
-              </n-button>
-            </div>
+            <n-select
+              v-model:value="selectedVoice"
+              :options="voiceOptions"
+              placeholder="默认"
+              size="small"
+              class="voice-select"
+            />
+            <n-button type="tertiary" size="small" class="listen-btn">
+              <template #icon>
+                <span>🔊</span>
+              </template>
+              试听
+            </n-button>
+            <n-button type="tertiary" size="small" class="adjust-btn">
+              <template #icon>
+                <span>↑</span>
+              </template>
+            </n-button>
+            <n-button type="tertiary" size="small" class="adjust-btn">
+              <template #icon>
+                <span>↓</span>
+              </template>
+            </n-button>
           </div>
 
-          <!-- 底部操作按钮 -->
-          <div class="detail-footer">
-            <n-button type="primary" size="small" @click="openAddStoryboardModal">
-              + 新建分镜
-            </n-button>
-            <n-button type="error" size="small" @click="deleteSelectedStoryboard">
-              X 删除分镜
-            </n-button>
-          </div>
         </div>
       </div>
 
@@ -440,7 +390,7 @@ const storyboards = ref<Storyboard[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-// 顶部导航栏
+// 顶部导航栏（暂时保留，待实现功能）
 const searchText = ref('');
 const dateFilters = ref(['11月5日', '11月10日']);
 const selectedDate = ref('11月10日');
@@ -679,36 +629,23 @@ onMounted(async () => {
 
 /* 顶部导航栏 */
 .top-header {
-  height: 64px;
+  height: 56px;
   background: #1e1e1e;
   border-bottom: 1px solid #2d2d2d;
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 24px;
+  padding: 0 16px;
+  gap: 12px;
   flex-shrink: 0;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.back-btn {
-  color: #fff;
-}
-
-.header-center {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  max-width: 600px;
 }
 
 .search-input {
   flex: 1;
   max-width: 400px;
+}
+
+.back-btn {
+  color: #fff;
 }
 
 .date-filters {
@@ -723,11 +660,6 @@ onMounted(async () => {
 .date-filter-btn.active {
   color: #00bcd4;
   border-bottom: 2px solid #00bcd4;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
 }
 
 .vip-btn {
@@ -752,11 +684,11 @@ onMounted(async () => {
 }
 
 .toolbar {
-  padding: 16px;
+  padding: 12px;
   border-bottom: 1px solid #2d2d2d;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tool-item {
@@ -772,17 +704,17 @@ onMounted(async () => {
 .storyboard-panel {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .storyboard-card {
   background: #1a1a1a;
   border: 1px solid #2d2d2d;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -800,7 +732,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .card-number {
@@ -822,7 +754,7 @@ onMounted(async () => {
 .card-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .generate-btn {
@@ -881,8 +813,8 @@ onMounted(async () => {
 }
 
 .card-footer {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid #2d2d2d;
   display: flex;
   gap: 4px;
@@ -895,12 +827,6 @@ onMounted(async () => {
   font-size: 12px;
 }
 
-.add-storyboard-buttons {
-  display: flex;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid #2d2d2d;
-}
 
 /* 中央主内容区 */
 .center-panel {
@@ -933,38 +859,27 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 16px;
   overflow-y: auto;
 }
 
 .detail-actions {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.text-area-container {
-  flex: 1;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .dialogue-textarea {
   width: 100%;
-  height: 100%;
   min-height: 200px;
+  margin-bottom: 12px;
 }
 
 .detail-controls {
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.control-left {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  margin-bottom: 12px;
 }
 
 .voice-select {
@@ -975,21 +890,10 @@ onMounted(async () => {
   color: #00bcd4;
 }
 
-.control-right {
-  display: flex;
-  gap: 8px;
-}
-
 .adjust-btn {
   min-width: 32px;
 }
 
-.detail-footer {
-  display: flex;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid #2d2d2d;
-}
 
 /* 右侧功能栏 */
 .right-panel {
@@ -999,15 +903,15 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 8px;
-  gap: 16px;
+  padding: 12px 8px;
+  gap: 12px;
   overflow-y: auto;
 }
 
 .function-icons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
 }
 

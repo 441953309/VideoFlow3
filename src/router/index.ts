@@ -7,20 +7,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: Layout,
-    redirect: '/home',
+    redirect: '/projects',
     children: [
-      {
-        path: '/home',
-        name: 'home',
-        component: () => import('../pages/Home/Home.vue'),
-        meta: {
-          title: '首页',
-        },
-      },
       {
         path: '/projects',
         name: 'projects',
-        component: () => import('../pages/Project/Project.vue'),
+        component: () => import('../pages/Projects/index.vue'),
         meta: {
           title: '项目管理',
         },
@@ -31,6 +23,14 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/Videos/Videos.vue'),
         meta: {
           title: '视频管理',
+        },
+      },
+      {
+        path: '/settings',
+        name: 'settings',
+        component: () => import('../pages/Settings/Settings.vue'),
+        meta: {
+          title: '软件设置',
         },
       },
     ],
