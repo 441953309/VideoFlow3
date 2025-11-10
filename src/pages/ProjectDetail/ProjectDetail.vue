@@ -1,135 +1,332 @@
 <template>
   <div class="project-detail-page">
-    <div class="page-layout">
-      <!-- 左侧主内容区 -->
-      <div class="main-content">
-        <div class="header">
-          <button @click="goBack" class="back-btn">← 返回</button>
-          <h1>{{ project?.projectName || '项目详情' }}</h1>
+    <!-- 顶部导航栏 -->
+    <div class="top-header">
+      <div class="header-left">
+        <n-button type="tertiary" @click="goBack" class="back-btn">
+          <template #icon>
+            <span>←</span>
+          </template>
+          返回
+        </n-button>
+      </div>
+      <div class="header-center">
+        <n-input
+          v-model:value="searchText"
+          placeholder="在使用文档中搜索..."
+          class="search-input"
+          clearable
+        >
+          <template #prefix>
+            <span>🔍</span>
+          </template>
+        </n-input>
+        <div class="date-filters">
+          <n-button
+            v-for="date in dateFilters"
+            :key="date"
+            size="small"
+            type="tertiary"
+            :class="['date-filter-btn', { active: selectedDate === date }]"
+            @click="selectedDate = date"
+          >
+            {{ date }}
+          </n-button>
+        </div>
+      </div>
+      <div class="header-right">
+        <n-button type="tertiary" class="vip-btn">
+          <template #icon>
+            <span>👑</span>
+          </template>
+          VIP会员
+        </n-button>
+      </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-layout">
+      <!-- 左侧控制面板 -->
+      <div class="left-panel">
+        <!-- 工具栏 -->
+        <div class="toolbar">
+          <n-button type="tertiary" size="small" class="tool-btn">
+            <template #icon>
+              <span>🔍</span>
+            </template>
+            筛选分镜
+          </n-button>
+          <div class="tool-item">
+            <n-button type="tertiary" size="small" class="tool-btn">
+              <template #icon>
+                <span>📋</span>
+              </template>
+              任务队列
+            </n-button>
+            <n-switch v-model:value="taskQueueEnabled" size="small" />
+          </div>
+          <n-button type="tertiary" size="small" class="tool-btn">
+            <template #icon>
+              <span>🔍</span>
+            </template>
+            放大模式
+          </n-button>
         </div>
 
-        <div v-if="loading" class="loading-state">加载中...</div>
-        <div v-else-if="error" class="error-message">{{ error }}</div>
-        <div v-else>
-          <!-- 添加分镜按钮 -->
-          <div class="actions-bar">
-            <button @click="openAddStoryboardModal" class="add-btn">
-              + 添加分镜
-            </button>
-          </div>
-
-          <!-- 分镜列表 -->
-          <div v-if="storyboards.length === 0" class="empty-state">
-            暂无分镜，请添加第一个分镜
-          </div>
-          <div v-else class="storyboard-list">
-            <div
-              v-for="storyboard in storyboards"
-              :key="storyboard.storyboardId"
-              class="storyboard-item"
-            >
-              <div class="storyboard-header">
-                <div class="sequence-controls">
-                  <button
-                    @click="moveStoryboard(storyboard.storyboardId, 'up')"
-                    :disabled="storyboard.sequenceNumber === 1"
-                    class="move-btn"
-                    title="上移"
-                  >
-                    ↑
-                  </button>
-                  <span class="sequence-number">#{{ storyboard.sequenceNumber }}</span>
-                  <button
-                    @click="moveStoryboard(storyboard.storyboardId, 'down')"
-                    :disabled="storyboard.sequenceNumber === storyboards.length"
-                    class="move-btn"
-                    title="下移"
-                  >
-                    ↓
-                  </button>
-                </div>
-                <div class="storyboard-actions">
-                  <button @click="editStoryboard(storyboard)" class="edit-btn">编辑</button>
-                  <button @click="deleteStoryboard(storyboard.storyboardId)" class="delete-btn">删除</button>
-                </div>
-              </div>
-
-              <div class="storyboard-content">
-                <!-- 分镜描述 -->
-                <div class="field-group">
-                  <label>分镜描述：</label>
-                  <div class="field-value">{{ storyboard.description || '（未填写）' }}</div>
-                </div>
-
-                <!-- 图片提示词 -->
-                <div class="field-group">
-                  <label>图片提示词：</label>
-                  <div class="field-value">{{ storyboard.imagePrompt || '（未填写）' }}</div>
-                </div>
-
-                <!-- 旁白对白列表 -->
-                <div class="dialogues-section">
-                  <div class="dialogues-header">
-                    <label>旁白对白：</label>
-                    <button
-                      @click="showAddDialogueModal = true; selectedStoryboardId = storyboard.storyboardId"
-                      class="add-dialogue-btn"
-                    >
-                      + 添加旁白对白
-                    </button>
-                  </div>
-                  <div v-if="storyboard.dialogues && storyboard.dialogues.length > 0" class="dialogues-list">
-                    <div
-                      v-for="dialogue in storyboard.dialogues"
-                      :key="dialogue.dialogueId"
-                      class="dialogue-item"
-                    >
-                      <div class="dialogue-content">
-                        <div class="dialogue-text">{{ dialogue.content }}</div>
-                        <div class="dialogue-meta">
-                          <span v-if="dialogue.character" class="character">角色：{{ dialogue.character }}</span>
-                          <span v-if="dialogue.tone" class="tone">语气：{{ dialogue.tone }}</span>
-                        </div>
-                      </div>
-                      <div class="dialogue-actions">
-                        <button @click="editDialogue(dialogue)" class="edit-btn-small">编辑</button>
-                        <button @click="deleteDialogue(dialogue.dialogueId)" class="delete-btn-small">删除</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else class="empty-dialogues">暂无旁白对白</div>
-                </div>
+        <!-- 分镜列表 -->
+        <div class="storyboard-panel">
+          <div
+            v-for="storyboard in storyboards"
+            :key="storyboard.storyboardId"
+            :class="['storyboard-card', { active: selectedStoryboardId === storyboard.storyboardId }]"
+            @click="selectStoryboard(storyboard.storyboardId)"
+          >
+            <!-- 分镜头部 -->
+            <div class="card-header">
+              <div class="card-number">#{{ storyboard.sequenceNumber }}</div>
+              <div class="card-actions" @click.stop>
+                <n-button
+                  type="tertiary"
+                  size="tiny"
+                  class="action-btn"
+                  @click="editStoryboard(storyboard)"
+                >
+                  ✏️
+                </n-button>
+                <n-button
+                  type="tertiary"
+                  size="tiny"
+                  class="action-btn"
+                  @click="deleteStoryboard(storyboard.storyboardId)"
+                >
+                  🗑️
+                </n-button>
               </div>
             </div>
+
+            <!-- 分镜内容 -->
+            <div class="card-content">
+              <n-button type="primary" size="small" class="generate-btn">
+                <template #icon>
+                  <span>✏️</span>
+                </template>
+                生成图片
+              </n-button>
+
+              <div class="media-controls">
+                <n-button type="tertiary" size="small" class="media-btn">K</n-button>
+                <n-button type="tertiary" size="small" class="media-btn">▶️</n-button>
+                <n-button type="tertiary" size="small" class="media-btn">I</n-button>
+              </div>
+
+              <n-input
+                v-model:value="storyboardTexts[storyboard.storyboardId]"
+                type="textarea"
+                :rows="2"
+                placeholder="输入文本..."
+                class="storyboard-text"
+                @click.stop
+              />
+
+              <div class="batch-controls">
+                <label>批量数量</label>
+                <n-input-number
+                  v-model:value="batchNumbers[storyboard.storyboardId]"
+                  :min="1"
+                  :max="100"
+                  size="small"
+                  class="batch-input"
+                  @click.stop
+                />
+              </div>
+
+              <div class="toggle-control">
+                <n-switch v-model:value="lipSyncEnabled[storyboard.storyboardId]" size="small" />
+                <label>视频口型</label>
+              </div>
+
+              <div class="character-tag">
+                <span>男-深空紫发-海贼大衣</span>
+              </div>
+            </div>
+
+            <!-- 底部操作栏 -->
+            <div class="card-footer" @click.stop>
+              <n-button type="tertiary" size="small" class="footer-btn" @click="editStoryboard(storyboard)">
+                <template #icon>
+                  <span>✏️</span>
+                </template>
+                编辑
+              </n-button>
+              <n-button type="tertiary" size="small" class="footer-btn">
+                <template #icon>
+                  <span>🧠</span>
+                </template>
+                推理
+              </n-button>
+              <n-button type="tertiary" size="small" class="footer-btn">
+                <template #icon>
+                  <span>🏷️</span>
+                </template>
+                标签
+              </n-button>
+              <n-button type="tertiary" size="small" class="footer-btn">
+                <template #icon>
+                  <span>📄</span>
+                </template>
+                详情
+              </n-button>
+              <n-button type="tertiary" size="small" class="footer-btn">
+                <template #icon>
+                  <span>⚙️</span>
+                </template>
+                工作流
+              </n-button>
+            </div>
+          </div>
+
+          <!-- 添加分镜按钮 -->
+          <div class="add-storyboard-buttons">
+            <n-button type="primary" size="small" @click="openAddStoryboardModal">
+              + 新建分镜
+            </n-button>
+            <n-button type="error" size="small" @click="deleteSelectedStoryboard">
+              X 删除分镜
+            </n-button>
           </div>
         </div>
       </div>
 
-      <!-- 右侧功能菜单 -->
-      <div class="right-menu">
-        <div class="menu-item" @click="openDrawer('scenes')" :class="{ active: drawerType === 'scenes' }">
-          <span class="menu-icon">🎬</span>
-          <span class="menu-label">场景管理</span>
+      <!-- 中央主内容区 -->
+      <div class="center-panel">
+        <div v-if="!selectedStoryboard" class="empty-center">
+          <div class="empty-icon">📹</div>
+          <div class="empty-text">请选择一个分镜查看详情</div>
         </div>
-        <div class="menu-item" @click="openDrawer('characters')" :class="{ active: drawerType === 'characters' }">
-          <span class="menu-icon">👤</span>
-          <span class="menu-label">角色管理</span>
+        <div v-else class="storyboard-detail">
+          <!-- 操作按钮 -->
+          <div class="detail-actions">
+            <n-button type="tertiary" size="small" class="action-btn">
+              <template #icon>
+                <span>✏️</span>
+              </template>
+              改写
+            </n-button>
+            <n-button type="tertiary" size="small" class="action-btn">
+              <template #icon>
+                <span>👤</span>
+              </template>
+              角色匹配
+            </n-button>
+          </div>
+
+          <!-- 文本区域 -->
+          <div class="text-area-container">
+            <n-input
+              v-model:value="selectedDialogueText"
+              type="textarea"
+              :rows="8"
+              placeholder="输入对话内容..."
+              class="dialogue-textarea"
+            />
+          </div>
+
+          <!-- 底部控制 -->
+          <div class="detail-controls">
+            <div class="control-left">
+              <n-select
+                v-model:value="selectedVoice"
+                :options="voiceOptions"
+                placeholder="默认"
+                size="small"
+                class="voice-select"
+              />
+              <n-button type="tertiary" size="small" class="listen-btn">
+                <template #icon>
+                  <span>🔊</span>
+                </template>
+                试听
+              </n-button>
+            </div>
+            <div class="control-right">
+              <n-button type="tertiary" size="small" class="adjust-btn">
+                <template #icon>
+                  <span>↑</span>
+                </template>
+              </n-button>
+              <n-button type="tertiary" size="small" class="adjust-btn">
+                <template #icon>
+                  <span>↓</span>
+                </template>
+              </n-button>
+            </div>
+          </div>
+
+          <!-- 底部操作按钮 -->
+          <div class="detail-footer">
+            <n-button type="primary" size="small" @click="openAddStoryboardModal">
+              + 新建分镜
+            </n-button>
+            <n-button type="error" size="small" @click="deleteSelectedStoryboard">
+              X 删除分镜
+            </n-button>
+          </div>
         </div>
-        <div class="menu-item" @click="openDrawer('sort')" :class="{ active: drawerType === 'sort' }">
-          <span class="menu-icon">📋</span>
-          <span class="menu-label">分镜排序</span>
+      </div>
+
+      <!-- 右侧功能栏 -->
+      <div class="right-panel">
+        <div class="function-icons">
+          <div class="icon-item" title="批量替换">
+            <span>🔄</span>
+          </div>
+          <div class="icon-item" title="关闭作品" @click="goBack">
+            <span>❌</span>
+          </div>
+          <div class="icon-item" title="网格">
+            <span>⊞</span>
+          </div>
+          <div class="icon-item" title="图片">
+            <span>🖼️</span>
+          </div>
+          <div class="icon-item" title="视频">
+            <span>🎥</span>
+          </div>
+          <div class="icon-item" title="角色" @click="openDrawer('characters')">
+            <span>👤</span>
+          </div>
+          <div class="icon-item" title="人物">
+            <span>👥</span>
+          </div>
+          <div class="icon-item" title="场景" @click="openDrawer('scenes')">
+            <span>🏢</span>
+          </div>
+          <div class="icon-item" title="麦克风">
+            <span>🎤</span>
+          </div>
+          <div class="icon-item" title="向下">
+            <span>⬇️</span>
+          </div>
+          <div class="icon-item" title="列表">
+            <span>📋</span>
+          </div>
+          <div class="icon-item" title="设置">
+            <span>⚙️</span>
+          </div>
+          <div class="icon-item" title="链接">
+            <span>🔗</span>
+          </div>
+          <div class="icon-item" title="聊天">
+            <span>💬</span>
+          </div>
         </div>
-        <div class="menu-item" @click="openDrawer('image-models')" :class="{ active: drawerType === 'image-models' }">
-          <span class="menu-icon">🖼️</span>
-          <span class="menu-label">图片模型</span>
-        </div>
-        <div class="menu-item" @click="openDrawer('video-models')" :class="{ active: drawerType === 'video-models' }">
-          <span class="menu-icon">🎥</span>
-          <span class="menu-label">视频模型</span>
-        </div>
-        <div class="menu-item" @click="openDrawer('lip-sync-models')" :class="{ active: drawerType === 'lip-sync-models' }">
-          <span class="menu-icon">💬</span>
-          <span class="menu-label">对口型模型</span>
+        <div class="function-buttons">
+          <n-button type="primary" size="small" @click="openAddStoryboardModal">
+            + 新建分镜
+          </n-button>
+          <n-button type="error" size="small" @click="deleteSelectedStoryboard">
+            X 删除分镜
+          </n-button>
         </div>
       </div>
     </div>
@@ -142,32 +339,21 @@
           <button @click="closeDrawer" class="drawer-close">×</button>
         </div>
         <div class="drawer-content">
-          <!-- 场景管理 -->
           <div v-if="drawerType === 'scenes'" class="drawer-panel">
             <SceneManagement :project-id="projectId" />
           </div>
-
-          <!-- 角色管理 -->
           <div v-if="drawerType === 'characters'" class="drawer-panel">
             <CharacterManagement :project-id="projectId" />
           </div>
-
-          <!-- 分镜排序 -->
           <div v-if="drawerType === 'sort'" class="drawer-panel">
             <StoryboardSort :project-id="projectId" @sorted="loadStoryboards" />
           </div>
-
-          <!-- 图片模型管理 -->
           <div v-if="drawerType === 'image-models'" class="drawer-panel">
             <ImageModelManagement :project-id="projectId" />
           </div>
-
-          <!-- 视频模型管理 -->
           <div v-if="drawerType === 'video-models'" class="drawer-panel">
             <VideoModelManagement :project-id="projectId" />
           </div>
-
-          <!-- 对口型模型管理 -->
           <div v-if="drawerType === 'lip-sync-models'" class="drawer-panel">
             <LipSyncModelManagement :project-id="projectId" />
           </div>
@@ -176,76 +362,39 @@
     </div>
 
     <!-- 添加/编辑分镜模态框 -->
-    <div v-if="showAddStoryboardModal || editingStoryboard" class="modal-overlay" @click="closeStoryboardModal">
-      <div class="modal" @click.stop>
-        <h3>{{ editingStoryboard ? '编辑分镜' : '添加分镜' }}</h3>
-        <div class="form-group">
-          <label>序号：</label>
-          <input
-            v-model.number="storyboardForm.sequenceNumber"
-            type="number"
-            min="1"
+    <n-modal v-model:show="showStoryboardModal" preset="dialog" title="分镜">
+      <div class="create-form" v-if="showStoryboardModal">
+        <n-form-item label="序号">
+          <n-input-number
+            v-model:value="storyboardForm.sequenceNumber"
+            :min="1"
             placeholder="分镜序号"
           />
-        </div>
-        <div class="form-group">
-          <label>分镜描述：</label>
-          <textarea
-            v-model="storyboardForm.description"
-            rows="3"
+        </n-form-item>
+        <n-form-item label="分镜描述">
+          <n-input
+            v-model:value="storyboardForm.description"
+            type="textarea"
+            :rows="3"
             placeholder="请输入分镜描述"
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label>图片提示词：</label>
-          <textarea
-            v-model="storyboardForm.imagePrompt"
-            rows="3"
+          />
+        </n-form-item>
+        <n-form-item label="图片提示词">
+          <n-input
+            v-model:value="storyboardForm.imagePrompt"
+            type="textarea"
+            :rows="3"
             placeholder="请输入图片提示词"
-          ></textarea>
-        </div>
-        <div class="modal-actions">
-          <button @click="saveStoryboard" class="save-btn">保存</button>
-          <button @click="closeStoryboardModal" class="cancel-btn">取消</button>
+          />
+        </n-form-item>
+        <div class="form-actions">
+          <n-button type="primary" @click="saveStoryboard" :disabled="!storyboardForm.sequenceNumber">
+            {{ editingStoryboard ? '更新' : '创建' }}
+          </n-button>
+          <n-button @click="closeStoryboardModal">取消</n-button>
         </div>
       </div>
-    </div>
-
-    <!-- 添加/编辑旁白对白模态框 -->
-    <div v-if="showAddDialogueModal || editingDialogue" class="modal-overlay" @click="closeDialogueModal">
-      <div class="modal" @click.stop>
-        <h3>{{ editingDialogue ? '编辑旁白对白' : '添加旁白对白' }}</h3>
-        <div class="form-group">
-          <label>内容：</label>
-          <textarea
-            v-model="dialogueForm.content"
-            rows="3"
-            placeholder="请输入旁白或对白内容"
-            required
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label>角色：</label>
-          <input
-            v-model="dialogueForm.character"
-            type="text"
-            placeholder="请输入角色名称（可选）"
-          />
-        </div>
-        <div class="form-group">
-          <label>语气：</label>
-          <input
-            v-model="dialogueForm.tone"
-            type="text"
-            placeholder="请输入语气（可选）"
-          />
-        </div>
-        <div class="modal-actions">
-          <button @click="saveDialogue" class="save-btn">保存</button>
-          <button @click="closeDialogueModal" class="cancel-btn">取消</button>
-        </div>
-      </div>
-    </div>
+    </n-modal>
   </div>
 </template>
 
@@ -291,6 +440,28 @@ const storyboards = ref<Storyboard[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
+// 顶部导航栏
+const searchText = ref('');
+const dateFilters = ref(['11月5日', '11月10日']);
+const selectedDate = ref('11月10日');
+
+// 左侧面板
+const taskQueueEnabled = ref(false);
+const selectedStoryboardId = ref<number | null>(null);
+const storyboardTexts = ref<Record<number, string>>({});
+const batchNumbers = ref<Record<number, number>>({});
+const lipSyncEnabled = ref<Record<number, boolean>>({});
+
+// 中央面板
+const selectedDialogueText = ref('');
+const selectedVoice = ref<string | null>(null);
+const voiceOptions = [
+  { label: '默认', value: 'default' },
+  { label: '男声', value: 'male' },
+  { label: '女声', value: 'female' },
+];
+
+// 分镜表单
 const showAddStoryboardModal = ref(false);
 const editingStoryboard = ref<Storyboard | null>(null);
 const storyboardForm = ref({
@@ -299,16 +470,7 @@ const storyboardForm = ref({
   imagePrompt: '',
 });
 
-const showAddDialogueModal = ref(false);
-const selectedStoryboardId = ref<number | null>(null);
-const editingDialogue = ref<Dialogue | null>(null);
-const dialogueForm = ref({
-  content: '',
-  character: '',
-  tone: '',
-});
-
-// Drawer 相关状态
+// Drawer
 const drawerVisible = ref(false);
 const drawerType = ref<string>('');
 const drawerTitles: Record<string, string> = {
@@ -322,6 +484,34 @@ const drawerTitles: Record<string, string> = {
 
 const drawerTitle = computed(() => drawerTitles[drawerType.value] || '');
 
+const selectedStoryboard = computed(() => {
+  if (!selectedStoryboardId.value) return null;
+  return storyboards.value.find(s => s.storyboardId === selectedStoryboardId.value) || null;
+});
+
+// 模态框显示状态
+const showStoryboardModal = computed({
+  get: () => showAddStoryboardModal.value || editingStoryboard.value !== null,
+  set: (value) => {
+    if (!value) {
+      showAddStoryboardModal.value = false;
+      editingStoryboard.value = null;
+    }
+  }
+});
+
+// 选择分镜
+function selectStoryboard(storyboardId: number) {
+  selectedStoryboardId.value = storyboardId;
+  const storyboard = storyboards.value.find(s => s.storyboardId === storyboardId);
+  if (storyboard && storyboard.dialogues && storyboard.dialogues.length > 0) {
+    selectedDialogueText.value = storyboard.dialogues.map(d => d.content).join('\n');
+  } else {
+    selectedDialogueText.value = storyboardTexts.value[storyboardId] || '';
+  }
+}
+
+// 打开 Drawer
 function openDrawer(type: string) {
   drawerType.value = type;
   drawerVisible.value = true;
@@ -329,7 +519,6 @@ function openDrawer(type: string) {
 
 function closeDrawer() {
   drawerVisible.value = false;
-  // 延迟清除类型，以便动画完成
   setTimeout(() => {
     if (!drawerVisible.value) {
       drawerType.value = '';
@@ -357,14 +546,27 @@ async function loadStoryboards() {
   error.value = null;
   try {
     const boards = await storyboardDb.getByProjectId(projectId.value);
-    // 为每个分镜加载旁白对白
     const boardsWithDialogues = await Promise.all(
       boards.map(async (board) => {
         const dialogues = await dialogueDb.getByStoryboardId(board.storyboardId);
+        // 初始化默认值
+        if (!storyboardTexts.value[board.storyboardId]) {
+          storyboardTexts.value[board.storyboardId] = '';
+        }
+        if (!batchNumbers.value[board.storyboardId]) {
+          batchNumbers.value[board.storyboardId] = 1;
+        }
+        if (lipSyncEnabled.value[board.storyboardId] === undefined) {
+          lipSyncEnabled.value[board.storyboardId] = false;
+        }
         return { ...board, dialogues };
       })
     );
     storyboards.value = boardsWithDialogues;
+    // 自动选择第一个分镜
+    if (boardsWithDialogues.length > 0 && !selectedStoryboardId.value) {
+      selectStoryboard(boardsWithDialogues[0].storyboardId);
+    }
   } catch (err) {
     error.value = (err as Error).message;
   } finally {
@@ -374,7 +576,6 @@ async function loadStoryboards() {
 
 // 打开添加分镜模态框
 function openAddStoryboardModal() {
-  // 计算下一个序号（取当前最大序号+1）
   const maxSequence = storyboards.value.length > 0
     ? Math.max(...storyboards.value.map(s => s.sequenceNumber))
     : 0;
@@ -386,7 +587,7 @@ function openAddStoryboardModal() {
   showAddStoryboardModal.value = true;
 }
 
-// 添加/编辑分镜
+// 编辑分镜
 function editStoryboard(storyboard: Storyboard) {
   editingStoryboard.value = storyboard;
   storyboardForm.value = {
@@ -399,26 +600,15 @@ function editStoryboard(storyboard: Storyboard) {
 function closeStoryboardModal() {
   showAddStoryboardModal.value = false;
   editingStoryboard.value = null;
-  // 计算下一个序号（取当前最大序号+1）
-  const maxSequence = storyboards.value.length > 0
-    ? Math.max(...storyboards.value.map(s => s.sequenceNumber))
-    : 0;
-  storyboardForm.value = {
-    sequenceNumber: maxSequence + 1,
-    description: '',
-    imagePrompt: '',
-  };
 }
 
 async function saveStoryboard() {
   if (!storyboardForm.value.sequenceNumber || storyboardForm.value.sequenceNumber < 1) {
-    alert('请输入有效的序号');
     return;
   }
 
   try {
     if (editingStoryboard.value) {
-      // 更新分镜
       await storyboardDb.update(
         editingStoryboard.value.storyboardId,
         storyboardForm.value.sequenceNumber,
@@ -426,7 +616,6 @@ async function saveStoryboard() {
         storyboardForm.value.imagePrompt || undefined
       );
     } else {
-      // 创建新分镜
       await storyboardDb.create(
         projectId.value,
         storyboardForm.value.sequenceNumber,
@@ -437,126 +626,33 @@ async function saveStoryboard() {
     closeStoryboardModal();
     await loadStoryboards();
   } catch (err) {
-    alert('保存失败: ' + (err as Error).message);
+    console.error('保存失败:', err);
   }
 }
 
 // 删除分镜
 async function deleteStoryboard(storyboardId: number) {
-  if (!confirm('确定要删除这个分镜吗？这将同时删除该分镜下的所有旁白对白。')) {
+  if (!confirm('确定要删除这个分镜吗？')) {
     return;
   }
 
   try {
     await storyboardDb.delete(storyboardId);
-    await loadStoryboards();
-  } catch (err) {
-    alert('删除失败: ' + (err as Error).message);
-  }
-}
-
-// 移动分镜顺序
-async function moveStoryboard(storyboardId: number, direction: 'up' | 'down') {
-  const currentIndex = storyboards.value.findIndex(s => s.storyboardId === storyboardId);
-  if (currentIndex === -1) return;
-
-  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-  if (targetIndex < 0 || targetIndex >= storyboards.value.length) return;
-
-  const current = storyboards.value[currentIndex];
-  const target = storyboards.value[targetIndex];
-
-  // 交换序号
-  const tempSequence = current.sequenceNumber;
-  current.sequenceNumber = target.sequenceNumber;
-  target.sequenceNumber = tempSequence;
-
-  try {
-    await storyboardDb.updateSequences([
-      { storyboardId: current.storyboardId, sequenceNumber: current.sequenceNumber },
-      { storyboardId: target.storyboardId, sequenceNumber: target.sequenceNumber },
-    ]);
-    await loadStoryboards();
-  } catch (err) {
-    alert('移动失败: ' + (err as Error).message);
-    await loadStoryboards();
-  }
-}
-
-// 添加/编辑旁白对白
-function editDialogue(dialogue: Dialogue) {
-  editingDialogue.value = dialogue;
-  selectedStoryboardId.value = dialogue.storyboardId;
-  dialogueForm.value = {
-    content: dialogue.content,
-    character: dialogue.character || '',
-    tone: dialogue.tone || '',
-  };
-}
-
-function closeDialogueModal() {
-  showAddDialogueModal.value = false;
-  selectedStoryboardId.value = null;
-  editingDialogue.value = null;
-  dialogueForm.value = {
-    content: '',
-    character: '',
-    tone: '',
-  };
-}
-
-async function saveDialogue() {
-  if (!dialogueForm.value.content.trim()) {
-    alert('请输入旁白对白内容');
-    return;
-  }
-
-  const targetStoryboardId = editingDialogue.value
-    ? editingDialogue.value.storyboardId
-    : selectedStoryboardId.value;
-
-  if (!targetStoryboardId) {
-    alert('请选择分镜');
-    return;
-  }
-
-  try {
-    if (editingDialogue.value) {
-      // 更新旁白对白
-      await dialogueDb.update(
-        editingDialogue.value.dialogueId,
-        dialogueForm.value.content,
-        dialogueForm.value.character || undefined,
-        dialogueForm.value.tone || undefined
-      );
-    } else {
-      // 创建新旁白对白
-      await dialogueDb.create(
-        targetStoryboardId,
-        dialogueForm.value.content,
-        dialogueForm.value.character || undefined,
-        dialogueForm.value.tone || undefined
-      );
+    if (selectedStoryboardId.value === storyboardId) {
+      selectedStoryboardId.value = null;
     }
-    closeDialogueModal();
     await loadStoryboards();
   } catch (err) {
-    alert('保存失败: ' + (err as Error).message);
+    console.error('删除失败:', err);
   }
 }
 
-// 删除旁白对白
-async function deleteDialogue(dialogueId: number) {
-  if (!confirm('确定要删除这条旁白对白吗？')) {
+// 删除选中的分镜
+async function deleteSelectedStoryboard() {
+  if (!selectedStoryboardId.value) {
     return;
   }
-
-  try {
-    await dialogueDb.delete(dialogueId);
-    await loadStoryboards();
-  } catch (err) {
-    alert('删除失败: ' + (err as Error).message);
-  }
+  await deleteStoryboard(selectedStoryboardId.value);
 }
 
 // 返回
@@ -573,440 +669,374 @@ onMounted(async () => {
 
 <style scoped>
 .project-detail-page {
-  padding: 0;
-  height: 100%;
-}
-
-.page-layout {
+  height: 100vh;
   display: flex;
-  height: 100%;
-  gap: 0;
+  flex-direction: column;
+  background: #1a1a1a;
+  color: #fff;
+  overflow: hidden;
 }
 
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0;
-}
-
-.header {
+/* 顶部导航栏 */
+.top-header {
+  height: 64px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #2d2d2d;
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
+  padding: 0 24px;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
 }
 
 .back-btn {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
+  color: #fff;
 }
 
-.back-btn:hover {
-  background-color: #5a6268;
+.header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 600px;
 }
 
-h1 {
-  margin: 0;
-  color: #333;
+.search-input {
+  flex: 1;
+  max-width: 400px;
 }
 
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #999;
+.date-filters {
+  display: flex;
+  gap: 8px;
 }
 
-.error-message {
-  padding: 15px;
-  background-color: #fee;
-  border: 1px solid #fcc;
-  border-radius: 4px;
-  color: #c33;
-  margin-bottom: 20px;
+.date-filter-btn {
+  color: #a0a0a0;
 }
 
-.actions-bar {
-  margin-bottom: 20px;
+.date-filter-btn.active {
+  color: #00bcd4;
+  border-bottom: 2px solid #00bcd4;
 }
 
-.add-btn {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
+.header-right {
+  display: flex;
+  align-items: center;
 }
 
-.add-btn:hover {
-  background-color: #0056b3;
+.vip-btn {
+  color: #ffd700;
 }
 
-.storyboard-list {
+/* 主布局 */
+.main-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 左侧控制面板 */
+.left-panel {
+  width: 400px;
+  background: #1e1e1e;
+  border-right: 1px solid #2d2d2d;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  overflow: hidden;
 }
 
-.storyboard-item {
-  background: white;
-  border: 1px solid #ddd;
+.toolbar {
+  padding: 16px;
+  border-bottom: 1px solid #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tool-btn {
+  color: #ccc;
+}
+
+.storyboard-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.storyboard-card {
+  background: #1a1a1a;
+  border: 1px solid #2d2d2d;
   border-radius: 8px;
-  padding: 20px;
-  transition: box-shadow 0.2s;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.storyboard-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.storyboard-card:hover {
+  border-color: #00bcd4;
 }
 
-.storyboard-header {
+.storyboard-card.active {
+  border-color: #00bcd4;
+  background: #1f2a2e;
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 12px;
 }
 
-.sequence-controls {
+.card-number {
+  font-weight: 600;
+  color: #00bcd4;
+  font-size: 16px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  padding: 4px 8px;
+  min-width: auto;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.generate-btn {
+  width: 100%;
+  background: #00bcd4;
+  border-color: #00bcd4;
+}
+
+.media-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.media-btn {
+  min-width: 40px;
+}
+
+.storyboard-text {
+  width: 100%;
+}
+
+.batch-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.move-btn {
-  padding: 4px 8px;
-  background-color: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
+.batch-controls label {
   font-size: 12px;
+  color: #ccc;
 }
 
-.move-btn:hover:not(:disabled) {
-  background-color: #e9ecef;
+.batch-input {
+  width: 80px;
 }
 
-.move-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.toggle-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.sequence-number {
-  font-weight: bold;
-  color: #007bff;
-  min-width: 40px;
+.toggle-control label {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.character-tag {
+  padding: 6px 12px;
+  background: #764ba2;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #fff;
   text-align: center;
 }
 
-.storyboard-actions {
+.card-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2d2d2d;
   display: flex;
-  gap: 10px;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
-.storyboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.field-group label {
-  font-weight: 500;
-  color: #555;
-  font-size: 14px;
-}
-
-.field-value {
-  color: #333;
-  line-height: 1.6;
-  padding: 8px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  min-height: 20px;
-}
-
-.dialogues-section {
-  margin-top: 10px;
-}
-
-.dialogues-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.add-dialogue-btn {
-  padding: 6px 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.footer-btn {
+  flex: 1;
+  min-width: 60px;
   font-size: 12px;
 }
 
-.add-dialogue-btn:hover {
-  background-color: #218838;
+.add-storyboard-buttons {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #2d2d2d;
 }
 
-.dialogues-list {
+/* 中央主内容区 */
+.center-panel {
+  flex: 1;
+  background: #1a1a1a;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  overflow: hidden;
 }
 
-.dialogue-item {
+.empty-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 16px;
+}
+
+.storyboard-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.text-area-container {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.dialogue-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.detail-controls {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.dialogue-content {
+.control-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.voice-select {
+  width: 120px;
+}
+
+.listen-btn {
+  color: #00bcd4;
+}
+
+.control-right {
+  display: flex;
+  gap: 8px;
+}
+
+.adjust-btn {
+  min-width: 32px;
+}
+
+.detail-footer {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #2d2d2d;
+}
+
+/* 右侧功能栏 */
+.right-panel {
+  width: 60px;
+  background: #1e1e1e;
+  border-left: 1px solid #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.function-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   flex: 1;
 }
 
-.dialogue-text {
-  color: #333;
-  line-height: 1.6;
-  margin-bottom: 8px;
-}
-
-.dialogue-meta {
+.icon-item {
+  width: 44px;
+  height: 44px;
   display: flex;
-  gap: 15px;
-  font-size: 12px;
-  color: #666;
-}
-
-.character,
-.tone {
-  padding: 2px 8px;
-  background-color: #e9ecef;
-  border-radius: 3px;
-}
-
-.dialogue-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.edit-btn {
-  background-color: #28a745;
-  color: white;
-}
-
-.edit-btn:hover {
-  background-color: #218838;
-}
-
-.delete-btn {
-  background-color: #dc3545;
-  color: white;
-}
-
-.delete-btn:hover {
-  background-color: #c82333;
-}
-
-.edit-btn-small,
-.delete-btn-small {
-  padding: 4px 8px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.edit-btn-small {
-  background-color: #28a745;
-  color: white;
-}
-
-.edit-btn-small:hover {
-  background-color: #218838;
-}
-
-.delete-btn-small {
-  background-color: #dc3545;
-  color: white;
-}
-
-.delete-btn-small:hover {
-  background-color: #c82333;
-}
-
-.empty-dialogues {
-  padding: 15px;
-  text-align: center;
-  color: #999;
-  font-size: 14px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-}
-
-/* 模态框样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  min-width: 500px;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.modal h3 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.modal .form-group {
-  margin-bottom: 20px;
-}
-
-.modal .form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #555;
-}
-
-.modal .form-group input,
-.modal .form-group textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.modal .form-group input:focus,
-.modal .form-group textarea:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
-
-.modal-actions button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.save-btn {
-  background-color: #007bff;
-  color: white;
-}
-
-.save-btn:hover {
-  background-color: #0056b3;
-}
-
-.cancel-btn {
-  background-color: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-/* 右侧功能菜单 */
-.right-menu {
-  width: 80px;
-  background: #f8f9fa;
-  border-left: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  gap: 10px;
-}
-
-.menu-item {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
-  padding: 8px;
-  box-sizing: border-box;
+  font-size: 20px;
 }
 
-.menu-item:hover {
-  background: #e9ecef;
+.icon-item:hover {
+  background: #2d2d2d;
+  transform: scale(1.1);
 }
 
-.menu-item.active {
-  background: #007bff;
-  color: white;
+.function-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
-.menu-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-.menu-label {
-  font-size: 11px;
-  text-align: center;
-  line-height: 1.2;
-  word-break: break-all;
+.function-buttons .n-button {
+  width: 100%;
 }
 
 /* Drawer 样式 */
@@ -1022,12 +1052,8 @@ h1 {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .drawer {
@@ -1037,7 +1063,7 @@ h1 {
   bottom: 0;
   width: 500px;
   max-width: 90vw;
-  background: white;
+  background: #1e1e1e;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
@@ -1046,12 +1072,8 @@ h1 {
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 .drawer-header {
@@ -1059,13 +1081,13 @@ h1 {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid #2d2d2d;
 }
 
 .drawer-header h2 {
   margin: 0;
   font-size: 18px;
-  color: #333;
+  color: #fff;
 }
 
 .drawer-close {
@@ -1075,7 +1097,7 @@ h1 {
   background: transparent;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: #ccc;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1084,8 +1106,8 @@ h1 {
 }
 
 .drawer-close:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: #2d2d2d;
+  color: #fff;
 }
 
 .drawer-content {
@@ -1097,5 +1119,16 @@ h1 {
 .drawer-panel {
   height: 100%;
 }
-</style>
 
+/* 表单样式 */
+.create-form {
+  padding: 20px 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+</style>
