@@ -40,9 +40,10 @@
         >
           <div class="project-info">
             <span class="project-id">#{{ project.projectId }}</span>
-            <span class="project-name">{{ project.projectName }}</span>
+            <span class="project-name" @click="viewProjectDetail(project.projectId)">{{ project.projectName }}</span>
           </div>
           <div class="project-actions">
+            <button @click="viewProjectDetail(project.projectId)" class="view-btn">查看详情</button>
             <button @click="editProject(project)" class="edit-btn">编辑</button>
             <button @click="deleteProject(project.projectId)" class="delete-btn">删除</button>
           </div>
@@ -73,10 +74,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useProjectStore, type Project } from '../stores/project';
-import { getCurrentDateString } from '../utils/date';
+import { useRouter } from 'vue-router';
+import { useProjectStore, type Project } from '../../stores/project';
+import { getCurrentDateString } from '../../utils/date';
 
 const projectStore = useProjectStore();
+const router = useRouter();
 
 const projectName = ref(getCurrentDateString());
 const editingProject = ref<Project | null>(null);
@@ -145,6 +148,11 @@ async function deleteProject(projectId: number) {
   } catch (error) {
     alert('删除项目失败: ' + (error as Error).message);
   }
+}
+
+// 查看项目详情
+function viewProjectDetail(projectId: number) {
+  router.push(`/projects/${projectId}`);
 }
 
 // 初始化
@@ -268,6 +276,12 @@ h2 {
 .project-name {
   font-weight: 500;
   color: #333;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.project-name:hover {
+  color: #007bff;
 }
 
 .project-actions {
@@ -281,6 +295,15 @@ h2 {
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
+}
+
+.view-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: #0056b3;
 }
 
 .edit-btn {

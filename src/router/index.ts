@@ -1,36 +1,52 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+import Layout from '../layout/Layout.vue';
 
 // 路由配置
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('../pages/Home.vue'),
-    meta: {
-      title: '首页',
-    },
+    component: Layout,
+    redirect: '/home',
+    children: [
+      {
+        path: '/home',
+        name: 'home',
+        component: () => import('../pages/Home/Home.vue'),
+        meta: {
+          title: '首页',
+        },
+      },
+      {
+        path: '/projects',
+        name: 'projects',
+        component: () => import('../pages/Project/Project.vue'),
+        meta: {
+          title: '项目管理',
+        },
+      },
+      {
+        path: '/videos',
+        name: 'videos',
+        component: () => import('../pages/Videos/Videos.vue'),
+        meta: {
+          title: '视频管理',
+        },
+      },
+    ],
   },
   {
-    path: '/projects',
-    name: 'projects',
-    component: () => import('../pages/Project.vue'),
+    path: '/projects/:id',
+    name: 'project-detail',
+    component: () => import('../pages/ProjectDetail/ProjectDetail.vue'),
     meta: {
-      title: '项目管理',
-    },
-  },
-  {
-    path: '/videos',
-    name: 'videos',
-    component: () => import('../pages/Videos.vue'),
-    meta: {
-      title: '视频管理',
+      title: '项目详情',
     },
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('../pages/NotFound.vue'),
+    component: () => import('../pages/NotFound/NotFound.vue'),
     meta: {
       title: '页面未找到',
     },

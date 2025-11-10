@@ -44,7 +44,7 @@ function renderIcon(icon) {
 const menuOptions = computed(() => [
   {
     label: '首页',
-    key: '/',
+    key: '/home',
     icon: renderIcon('🏠'),
   },
   {
