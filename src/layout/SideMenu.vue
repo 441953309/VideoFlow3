@@ -10,26 +10,15 @@
 
     <!-- 菜单 -->
     <div class="menu-container">
-      <!-- 创作 -->
-      <div class="menu-section">
-        <div v-if="!collapsed" class="section-title">创作</div>
+      <div
+        v-for="group in menuGroups"
+        :key="group.id"
+        class="menu-section"
+      >
+        <div v-if="!collapsed" class="section-title">{{ group.title }}</div>
         <n-menu
           :value="activeKey"
-          :options="creationMenuOptions"
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="22"
-          @update:value="handleMenuClick"
-          class="menu"
-        />
-      </div>
-
-      <!-- 工具 -->
-      <div class="menu-section">
-        <div v-if="!collapsed" class="section-title">工具</div>
-        <n-menu
-          :value="activeKey"
-          :options="toolsMenuOptions"
+          :options="group.items"
           :collapsed="collapsed"
           :collapsed-width="64"
           :collapsed-icon-size="22"
@@ -70,41 +59,73 @@ function renderIcon(icon) {
   return () => h('span', { class: 'menu-icon' }, icon);
 }
 
-const creationMenuOptions = computed(() => [
-  {
-    label: '创作空间',
-    key: '/projects',
-    icon: renderIcon('📁'),
-  },
-  {
-    label: '素材库',
-    key: '/materials',
-    icon: renderIcon('📄'),
-  },
-  {
-    label: '软件设置',
-    key: '/settings',
-    icon: renderIcon('⚙️'),
-  },
-]);
+// 从路由配置中生成菜单项，按分组组织
+const menuGroups = computed(() => {
+  const routes = router.getRoutes();
+  const groupsMap = {};
 
-const toolsMenuOptions = computed(() => [
-  {
-    label: '文案处理',
-    key: '/copywriting',
-    icon: renderIcon('📝'),
-  },
-  {
-    label: '工具箱',
-    key: '/toolbox',
-    icon: renderIcon('🧰'),
-  },
-  {
-    label: '常用页面',
-    key: '/common-pages',
-    icon: renderIcon('✈️'),
-  },
-]);
+  // 遍历路由，提取分组和菜单项
+  routes.forEach((route) => {
+    // 检查是否是分组路由（父路由，有 type: 'group'）
+    if (route.meta?.menu?.type === 'group') {
+      const groupInfo = route.meta.menu;
+      // 使用父路由的 group 属性作为分组 ID，如果没有则使用 label
+      const parentGroupId = groupInfo.group || groupInfo.label || route.name || route.path;
+      
+      // 初始化父分组
+      if (!groupsMap[parentGroupId]) {
+        groupsMap[parentGroupId] = {
+          id: parentGroupId,
+          title: groupInfo.label || parentGroupId,
+          order: groupInfo.order || 999,
+          items: [],
+        };
+      }
+      
+      // 处理子路由
+      if (route.children && route.children.length > 0) {
+        route.children.forEach((childRoute) => {
+          // 只处理有 menu 配置且不是分组类型的子路由
+          if (childRoute.meta?.menu && childRoute.meta.menu.type !== 'group') {
+            const menuInfo = childRoute.meta.menu;
+            // 子路由如果没有指定 group，使用父分组；如果指定了 group，使用指定的 group
+            const groupId = menuInfo.group || parentGroupId;
+            
+            // 如果分组不存在，创建分组（这种情况发生在子路由指定了不同的 group）
+            if (!groupsMap[groupId]) {
+              groupsMap[groupId] = {
+                id: groupId,
+                title: groupId,
+                order: 999,
+                items: [],
+              };
+            }
+
+            // 添加菜单项
+            const menuItem = {
+              label: menuInfo.label,
+              key: childRoute.path,
+              icon: renderIcon(menuInfo.icon),
+              order: menuInfo.order || 999,
+            };
+            groupsMap[groupId].items.push(menuItem);
+          }
+        });
+      }
+    }
+  });
+
+  // 按分组 order 排序，然后按菜单项 order 排序
+  const sortedGroups = Object.values(groupsMap)
+    .map((group) => ({
+      ...group,
+      items: group.items.sort((a, b) => a.order - b.order),
+    }))
+    .filter((group) => group.items.length > 0) // 只显示有菜单项的分组
+    .sort((a, b) => a.order - b.order);
+
+  return sortedGroups;
+});
 
 function handleMenuClick(key) {
   router.push(key);
