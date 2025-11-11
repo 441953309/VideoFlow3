@@ -4,178 +4,134 @@
     <n-tabs v-model:value="activeTab" type="line" class="settings-tabs">
       <n-tab-pane name="basic" tab="基础设置">
         <div class="settings-content">
-          <!-- 图片生成引擎设置 -->
-          <div class="settings-section">
-            <div class="section-header">
-              <h3 class="section-title">图片生成引擎设置</h3>
-              <a href="#" class="doc-link">MidJourney账号申请文档</a>
-            </div>
-            <div class="section-body">
-              <div class="form-group">
-                <label class="form-label">引擎类型</label>
-                <n-radio-group v-model:value="imageEngine.engineType" class="radio-group">
-                  <n-radio value="midjourney">MidJourney</n-radio>
-                  <n-radio value="comfyui">ComfyUI</n-radio>
-                  <n-radio value="webui">WebUI</n-radio>
-                </n-radio-group>
-              </div>
-              <div class="form-group">
-                <label class="form-label">服务器类型</label>
-                <n-radio-group v-model:value="imageEngine.serverType" class="radio-group">
-                  <n-radio value="external">外部服务器</n-radio>
-                  <n-radio value="free">字字动画免费服务器</n-radio>
-                </n-radio-group>
-              </div>
-              <div class="form-group">
-                <label class="form-label">服务器地址</label>
-                <div class="input-with-button">
-                  <n-input
-                    v-model:value="imageEngine.serverAddress"
-                    placeholder="请输入服务器地址"
-                    class="server-input"
-                  />
-                  <n-button type="primary" class="test-btn">测试</n-button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 百度翻译API设置 -->
-          <div class="settings-section">
-            <div class="section-header">
-              <h3 class="section-title">百度翻译API设置</h3>
-              <a href="#" class="doc-link">百度翻译API-KEY申请文档</a>
-            </div>
-            <div class="section-body">
-              <div class="form-group">
-                <label class="form-label">启用翻译</label>
-                <n-switch v-model:value="baiduTranslate.enabled" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">APPID</label>
-                <n-input
-                  v-model:value="baiduTranslate.appId"
-                  placeholder="请输入百度翻译APPID"
-                  class="form-input"
-                />
-              </div>
-              <div class="form-group">
-                <label class="form-label">APPKEY</label>
-                <div class="input-with-icon">
-                  <n-input
-                    v-model:value="baiduTranslate.appKey"
-                    type="password"
-                    placeholder="请输入百度翻译APPKEY"
-                    class="form-input"
-                    show-password-on="click"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <n-button type="primary" class="test-btn">测试</n-button>
-              </div>
-            </div>
-          </div>
-
           <!-- 大语言模型设置 -->
           <div class="settings-section">
             <div class="section-header">
               <h3 class="section-title">大语言模型设置</h3>
-              <a href="#" class="doc-link">阿里云API-KEY申请文档</a>
+              <div class="header-actions">
+                <n-button type="primary" class="test-btn">测试</n-button>
+              </div>
             </div>
             <div class="section-body">
               <div class="form-group">
                 <label class="form-label">大语言模型平台</label>
                 <n-radio-group v-model:value="llm.platform" class="radio-group">
                   <n-radio value="aliyun">阿里云</n-radio>
-                  <n-radio value="silicon">硅基流动</n-radio>
                   <n-radio value="deepseek">DeepSeek官方</n-radio>
-                  <n-radio value="anthropic">Anthropic</n-radio>
-                  <n-radio value="openai">OpenAI</n-radio>
-                  <n-radio value="grok">Grok</n-radio>
                   <n-radio value="google">Google</n-radio>
-                  <n-radio value="custom">自定义平台</n-radio>
                 </n-radio-group>
               </div>
               <div class="form-group">
-                <label class="form-label">Google API-KEY</label>
+                <label class="form-label">{{ getApiKeyLabel() }}</label>
                 <div class="input-with-icon">
                   <n-input
                     v-model:value="llm.apiKey"
                     type="password"
-                    placeholder="请输入Google API-KEY"
+                    :placeholder="getApiKeyPlaceholder()"
                     class="form-input"
                     show-password-on="click"
                   />
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" v-if="getAvailableModels().length > 0">
                 <label class="form-label">模型选择</label>
                 <n-radio-group v-model:value="llm.model" class="radio-group">
-                  <n-radio value="gemini-2.5-pro">gemini-2.5-pro</n-radio>
-                  <n-radio value="gemini-2.5-flash">gemini-2.5-flash</n-radio>
-                  <n-radio value="gemini-2.0-flash">gemini-2.0-flash</n-radio>
+                  <n-radio
+                    v-for="model in getAvailableModels()"
+                    :key="model.value"
+                    :value="model.value"
+                  >
+                    {{ model.label }}
+                  </n-radio>
                 </n-radio-group>
               </div>
-              <div class="form-group">
+            </div>
+          </div>
+
+          <!-- 图片生成引擎设置 -->
+          <div class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">图片生成引擎设置</h3>
+              <div class="header-actions">
                 <n-button type="primary" class="test-btn">测试</n-button>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="form-group">
+                <label class="form-label">ComfyUI 服务器地址</label>
+                <n-input
+                  v-model:value="imageEngine.serverAddress"
+                  placeholder="请输入 ComfyUI 服务器地址"
+                  class="form-input"
+                />
               </div>
             </div>
           </div>
         </div>
       </n-tab-pane>
       
-      <n-tab-pane name="prompt" tab="提示词设置">
+      <n-tab-pane name="proxy" tab="代理设置">
         <div class="settings-content">
-          <div class="empty-tab">提示词设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="visual" tab="视觉理解设置">
-        <div class="settings-content">
-          <div class="empty-tab">视觉理解设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="keyframe" tab="关键帧设置">
-        <div class="settings-content">
-          <div class="empty-tab">关键帧设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="view" tab="视图设置">
-        <div class="settings-content">
-          <div class="empty-tab">视图设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="performance" tab="性能设置">
-        <div class="settings-content">
-          <div class="empty-tab">性能设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="audio" tab="音频设置">
-        <div class="settings-content">
-          <div class="empty-tab">音频设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="other" tab="其他设置">
-        <div class="settings-content">
-          <div class="empty-tab">其他设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="ai-assistant" tab="AI助手设置">
-        <div class="settings-content">
-          <div class="empty-tab">AI助手设置内容</div>
-        </div>
-      </n-tab-pane>
-      
-      <n-tab-pane name="role-scene" tab="角色场景设置">
-        <div class="settings-content">
-          <div class="empty-tab">角色场景设置内容</div>
+          <!-- 代理设置 -->
+          <div class="settings-section">
+            <div class="section-header">
+              <h3 class="section-title">代理设置</h3>
+            </div>
+            <div class="section-body">
+              <div class="form-group">
+                <label class="form-label">启用代理</label>
+                <n-switch v-model:value="proxy.enabled" />
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <label class="form-label">代理类型</label>
+                <n-radio-group v-model:value="proxy.type" class="radio-group">
+                  <n-radio value="http">HTTP</n-radio>
+                  <n-radio value="https">HTTPS</n-radio>
+                  <n-radio value="socks5">SOCKS5</n-radio>
+                </n-radio-group>
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <label class="form-label">代理地址</label>
+                <n-input
+                  v-model:value="proxy.host"
+                  placeholder="请输入代理服务器地址"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <label class="form-label">代理端口</label>
+                <n-input
+                  v-model:value="proxy.port"
+                  placeholder="请输入代理端口"
+                  class="form-input"
+                  type="number"
+                />
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <label class="form-label">用户名（可选）</label>
+                <n-input
+                  v-model:value="proxy.username"
+                  placeholder="请输入代理用户名"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <label class="form-label">密码（可选）</label>
+                <div class="input-with-icon">
+                  <n-input
+                    v-model:value="proxy.password"
+                    type="password"
+                    placeholder="请输入代理密码"
+                    class="form-input"
+                    show-password-on="click"
+                  />
+                </div>
+              </div>
+              <div class="form-group" v-if="proxy.enabled">
+                <n-button type="primary" class="test-btn">测试</n-button>
+              </div>
+            </div>
+          </div>
         </div>
       </n-tab-pane>
     </n-tabs>
@@ -183,30 +139,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const activeTab = ref('basic');
 
 // 图片生成引擎设置
 const imageEngine = ref({
-  engineType: 'comfyui',
-  serverType: 'external',
   serverAddress: 'http://127.0.0.1:8188/',
-});
-
-// 百度翻译API设置
-const baiduTranslate = ref({
-  enabled: true,
-  appId: '',
-  appKey: '',
 });
 
 // 大语言模型设置
 const llm = ref({
-  platform: 'google',
+  platform: 'aliyun',
   apiKey: '',
-  model: 'gemini-2.5-pro',
+  model: 'qwen-plus',
 });
+
+// 代理设置
+const proxy = ref({
+  enabled: false,
+  type: 'http',
+  host: '',
+  port: '',
+  username: '',
+  password: '',
+});
+
+// 模型配置
+const modelConfig = {
+  aliyun: [
+    { value: 'qwen-plus', label: 'qwen-plus' },
+    { value: 'deepseek-v3.1', label: 'deepseek-v3.1' },
+    { value: 'deepseek-v3', label: 'deepseek-v3' },
+    { value: 'deepseek-r1', label: 'deepseek-r1' },
+    { value: 'Moonshot-Kimi-K2-Instruct', label: 'Moonshot-Kimi-K2-Instruct' },
+    { value: 'qwen-max', label: 'qwen-max' },
+    { value: 'qwen-turbo', label: 'qwen-turbo' },
+    { value: 'qwen-long', label: 'qwen-long' },
+  ],
+  deepseek: [
+    { value: 'deepseek-chat', label: 'deepseek-chat' },
+    { value: 'deepseek-reasoner', label: 'deepseek-reasoner' },
+  ],
+  google: [
+    { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro' },
+    { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
+    { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash' },
+  ],
+};
+
+// 获取可用模型列表
+function getAvailableModels() {
+  return modelConfig[llm.value.platform] || [];
+}
+
+// 监听平台变化，重置模型为默认值
+watch(() => llm.value.platform, (newPlatform) => {
+  const models = modelConfig[newPlatform] || [];
+  if (models.length > 0) {
+    llm.value.model = models[0].value;
+  }
+});
+
+// 获取API-KEY标签
+function getApiKeyLabel() {
+  const labels = {
+    aliyun: '阿里云 API-KEY',
+    deepseek: 'DeepSeek API-KEY',
+    google: 'Google API-KEY',
+  };
+  return labels[llm.value.platform] || 'API-KEY';
+}
+
+// 获取API-KEY占位符
+function getApiKeyPlaceholder() {
+  const placeholders = {
+    aliyun: '请输入阿里云 API-KEY',
+    deepseek: '请输入 DeepSeek API-KEY',
+    google: '请输入 Google API-KEY',
+  };
+  return placeholders[llm.value.platform] || '请输入 API-KEY';
+}
 </script>
 
 <style scoped>
@@ -267,6 +280,12 @@ const llm = ref({
   align-items: center;
   padding: 10px 12px;
   border-bottom: 1px solid #2d2d2d;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .section-title {
